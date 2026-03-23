@@ -18,10 +18,12 @@ public class DateOperations {
 		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("[yyyy-MM-dd][dd/MM/yyyy]");
 
 		String[] result = Arrays.stream(dates)
-								.filter(Objects::nonNull)
-								.peek(date -> {
+								.map(date -> {
+									if(Objects.isNull(date))
+										throw new IllegalArgumentException("date is null");	
 									try {
 										LocalDate.parse(date,dateFormat);
+										return date;
 									}catch(DateTimeParseException e) {
 										throw new IllegalArgumentException("date '%s' from array can't be parsed".formatted(date));
 									}
@@ -64,11 +66,16 @@ public class DateOperations {
 		if(Objects.isNull(zoneSubstring))
 			System.out.println("<%s> - ".formatted(ZoneId.systemDefault().getId()) + ZonedDateTime.now().format(dtf));
 		else {
-			
-			Optional<String> zn = ZoneId.getAvailableZoneIds().stream().filter(zone -> zone.contains(zoneSubstring)).findFirst();
-			if(zn.isEmpty())
-				throw new IllegalArgumentException("Invalid format of zone");
-			System.out.println("<%s> - ".formatted(zn.get()) + ZonedDateTime.now(ZoneId.of(zn.get())).format(dtf));
+			String[] zones = zoneSubstring.trim().split(" ");
+			Arrays.stream(zones)
+				.filter(zoneStr -> {
+					Optional<String> zn = ZoneId.getAvailableZoneIds().stream().filter(zone -> zone.contains(zoneStr)).findFirst();
+					return zn.isPresent() ? true : false; 
+				})
+				.forEach(zoneStr -> {
+					Optional<String> zn = ZoneId.getAvailableZoneIds().stream().filter(zone -> zone.contains(zoneStr)).findFirst();
+					System.out.println("<%s> - ".formatted(zn.get()) + ZonedDateTime.now(ZoneId.of(zn.get())).format(dtf));
+				});
 		}
 		
 	}
